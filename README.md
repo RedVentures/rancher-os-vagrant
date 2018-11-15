@@ -1,4 +1,4 @@
-# RancherOS Vagrant
+# Example Rancher 1.6 Cluster with Vagrant
 
 This was a fork of an existing rancher repo. 
 
