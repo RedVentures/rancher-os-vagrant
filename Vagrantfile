@@ -1,42 +1,29 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 
-require_relative 'vagrant_rancheros_guest_plugin.rb'
+require 'yaml'
 
-# To enable rsync folder share change to false
-$rsync_folder_disabled = true
-$number_of_nodes = 1
-$vm_mem = "1024"
-$vb_gui = false
+# Read in the config.yaml file
+vagrant_root = File.dirname(__FILE__) 
+yaml    = YAML.load_file(vagrant_root + '/config.yml')
+servers = yaml['servers']
 
-
-# All Vagrant configuration is done below. The "2" in Vagrant.configure
-# configures the configuration version (we support older styles for
-# backwards compatibility). Please don't change it unless you know what
-# you're doing.
 Vagrant.configure(2) do |config|
-  config.vm.box   = "rancherio/rancheros"
-  config.vm.box_version = ">=0.4.1"
-
-  (1..$number_of_nodes).each do |i|
-    hostname = "rancher-%02d" % i
-    config.vm.guest = :linux
-    config.vm.define hostname do |node|
-        node.vm.provider "virtualbox" do |vb|
-            vb.memory = $vm_mem
-            vb.gui = $vb_gui
-        end
-
-        ip = "172.19.8.#{i+100}"
-        node.vm.network "private_network", ip: ip
-        node.vm.hostname = hostname
-
-        # Disabling compression because OS X has an ancient version of rsync installed.
-        # Add -z or remove rsync__args below if you have a newer version of rsync on your machine.
-        node.vm.synced_folder ".", "/opt/rancher", type: "rsync",
-            rsync__exclude: ".git/", rsync__args: ["--verbose", "--archive", "--delete", "--copy-links"],
-            disabled: $rsync_folder_disabled
-
+  servers.each_with_index do |server, server_num|
+    config.vm.define server['name'] do |node|
+      ip = "172.19.8.#{server_num+100}"
+      node.vm.box = "RV/centos-7-x86_64"
+      node.vm.box_url = "http://kickstart.redventures.net/boxes/RV-centos-7-x86_64.json"
+      node.vm.provision "file", source:  vagrant_root + "/load-balancer/docker-compose.yml", destination: "/tmp/docker-compose.yml"
+      node.vm.provision "file", source:  vagrant_root + "/load-balancer/rancher-compose.yml", destination: "/tmp/rancher-compose.yml"
+      node.vm.provision "shell", path: vagrant_root + server['init_script']
+      node.vm.hostname = server['name']
+      node.vm.network "private_network", ip: ip
+      node.vm.provider "virtualbox" do |v|
+        v.name   = server['name']
+      end
     end
   end
 end
+
+#config.vm.provision "file", source: "~/.gitconfig", destination: ".gitconfig"

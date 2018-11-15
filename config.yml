@@ -1,0 +1,6 @@
+---
+  servers:
+    - name: rancher-master
+      init_script: /init_scripts/rancher-master.sh
+    - name: rancher-cattle
+      init_script: /init_scripts/rancher-cattle.sh
