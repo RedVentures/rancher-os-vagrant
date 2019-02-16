@@ -4,3 +4,5 @@
       init_script: /init_scripts/rancher-master.sh
     - name: rancher-cattle
       init_script: /init_scripts/rancher-cattle.sh
+    - name: rancher-cattle02
+      init_script: /init_scripts/rancher-cattle.sh
